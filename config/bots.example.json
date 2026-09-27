@@ -1,0 +1,18 @@
+{
+  "bots": [
+    {
+      "id": "alpha",
+      "name": "Alpha",
+      "command": "python3 main.py",
+      "working_dir": "/absolute/path/to/alpha",
+      "language": "python"
+    },
+    {
+      "id": "beta",
+      "name": "Beta",
+      "command": "./main",
+      "working_dir": "/absolute/path/to/beta",
+      "language": "cpp"
+    }
+  ]
+}
