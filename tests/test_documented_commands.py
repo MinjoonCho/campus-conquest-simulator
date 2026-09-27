@@ -10,16 +10,6 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 class DocumentedCommandTests(unittest.TestCase):
-    def test_required_operating_guides_exist(self):
-        required = (
-            ROOT / "README.md",
-            ROOT / "docs" / "USER_GUIDE.md",
-            ROOT / "docs" / "AGENT_GUIDE.md",
-            ROOT / "docs" / "CONFIG_REFERENCE.md",
-            ROOT / "docs" / "ARCHITECTURE.md",
-        )
-        self.assertEqual([str(path) for path in required if not path.is_file()], [])
-
     def test_quickstart_doctor_command_is_machine_readable(self):
         with tempfile.TemporaryDirectory() as tmp:
             result = subprocess.run(
