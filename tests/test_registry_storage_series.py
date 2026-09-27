@@ -40,6 +40,24 @@ class RegistryStorageSeriesTests(unittest.TestCase):
                 BotRegistry(store).add("bad", "Bad", "python bad.py", str(Path(tmp) / "missing"), "python")
             store.close()
 
+    def test_registry_accepts_executable_relative_to_working_directory(self):
+        from arena.bot_registry import BotRegistry
+        from arena.storage import ArenaStorage
+
+        with tempfile.TemporaryDirectory() as tmp:
+            bot_dir = Path(tmp) / "bot"
+            bot_dir.mkdir()
+            executable = bot_dir / "main"
+            executable.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+            executable.chmod(0o755)
+            store = ArenaStorage(Path(tmp) / "workspace")
+            record = BotRegistry(store).add("cpp", "C++", "./main", str(bot_dir), "cpp")
+            valid = BotRegistry(store).validate("cpp")
+            store.close()
+
+        self.assertEqual(record["command"], "./main")
+        self.assertTrue(valid["valid"])
+
     def test_side_swapped_jobs_pair_same_seed(self):
         from arena.series import expand_jobs
 

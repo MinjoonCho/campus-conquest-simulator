@@ -14,6 +14,15 @@ class BotNotFound(KeyError):
     pass
 
 
+def _executable_exists(command: str, directory: Path) -> bool:
+    executable = Path(command).expanduser()
+    if executable.is_absolute():
+        return executable.is_file()
+    if "/" in command or "\\" in command:
+        return (directory / executable).is_file()
+    return shutil.which(command) is not None
+
+
 class BotRegistry:
     def __init__(self, storage: ArenaStorage):
         self.storage = storage
@@ -36,8 +45,7 @@ class BotRegistry:
         tokens = shlex.split(command)
         if not tokens:
             raise ValueError("bot command must not be empty")
-        executable = Path(tokens[0]).expanduser()
-        if not executable.is_file() and shutil.which(tokens[0]) is None:
+        if not _executable_exists(tokens[0], directory):
             raise ValueError(f"bot executable not found: {tokens[0]}")
         return self.storage.upsert_bot(
             {
@@ -63,9 +71,10 @@ class BotRegistry:
 
     def validate(self, bot_id: str) -> dict[str, object]:
         record = self.get(bot_id)
-        directory_ok = Path(record["working_dir"]).is_dir()
+        directory = Path(record["working_dir"])
+        directory_ok = directory.is_dir()
         tokens = shlex.split(record["command"])
-        executable_ok = bool(tokens) and (Path(tokens[0]).is_file() or shutil.which(tokens[0]) is not None)
+        executable_ok = bool(tokens) and _executable_exists(tokens[0], directory)
         return {"id": bot_id, "valid": directory_ok and executable_ok}
 
 
