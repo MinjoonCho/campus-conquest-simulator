@@ -1,0 +1,12 @@
+[project]
+name = "campus-conquest-arena"
+version = "0.1.0"
+description = "Offline arena for Campus Conquest bots"
+requires-python = ">=3.11"
+
+[project.scripts]
+arena = "arena.cli:main"
+
+[tool.unittest]
+start-directory = "tests"
+
