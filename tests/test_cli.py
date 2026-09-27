@@ -59,6 +59,40 @@ class CliTests(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertEqual(payload["error"]["code"], "bot_not_found")
 
+    def test_series_jsonl_streams_progress_and_final_result(self):
+        fast = ROOT / "tests" / "fixtures" / "bots" / "fast_bot.py"
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace = Path(tmp)
+            for bot_id in ("a", "b"):
+                added = self.run_cli(
+                    workspace,
+                    "bots", "add",
+                    "--id", bot_id,
+                    "--name", bot_id.upper(),
+                    "--command", f"{sys.executable} {fast}",
+                    "--cwd", str(ROOT),
+                    "--json",
+                )
+                self.assertEqual(added.returncode, 0, added.stderr)
+            result = self.run_cli(
+                workspace,
+                "series",
+                "--bot-a", "a",
+                "--bot-b", "b",
+                "--seeds", "0",
+                "--max-turns", "1",
+                "--first-turn-ms", "500",
+                "--turn-ms", "200",
+                "--safety-timeout-ms", "1000",
+                "--jsonl",
+            )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        rows = [json.loads(line) for line in result.stdout.splitlines()]
+        self.assertEqual(rows[-1]["event"], "result")
+        self.assertEqual(rows[-1]["result"]["completed"], 1)
+        self.assertTrue(any(row.get("event") == "progress" for row in rows[:-1]))
+
 
 if __name__ == "__main__":
     unittest.main()

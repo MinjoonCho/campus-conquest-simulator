@@ -48,6 +48,21 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual(config.plan.max_turns, 160)
         self.assertTrue(config.official_comparable)
 
+    def test_modified_competition_limits_are_not_official_comparable(self):
+        from arena.config import load_run_config
+
+        cases = (
+            {"timing": {"first_turn_ms": 2999}},
+            {"timing": {"turn_ms": 301}},
+            {"games": {"max_turns": 1}},
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            for index, payload in enumerate(cases):
+                with self.subTest(payload=payload):
+                    path = Path(tmp) / f"run-{index}.json"
+                    path.write_text(json.dumps(payload), encoding="utf-8")
+                    self.assertFalse(load_run_config(path).official_comparable)
+
     def test_official_ruleset_rejects_balance_overrides(self):
         from arena.config import load_run_config
 

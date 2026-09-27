@@ -65,5 +65,10 @@ class ArenaConfig:
 
     @property
     def official_comparable(self) -> bool:
-        return self.plan.ruleset_mode == "official" and self.plan.timing.mode == "strict"
-
+        return (
+            self.plan.ruleset_mode == "official"
+            and self.plan.timing.mode == "strict"
+            and self.plan.timing.first_turn_ms == 3000
+            and self.plan.timing.turn_ms == 300
+            and self.plan.max_turns == 160
+        )

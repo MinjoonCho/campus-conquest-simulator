@@ -12,6 +12,7 @@ from .config import PROJECT_ROOT, resolve_official_root
 from .models import ArenaConfig, GamePlan, TimingConfig
 from .series import run_series
 from .storage import ArenaStorage
+from .tournament import run_tournament
 
 
 class CliError(Exception):
@@ -29,6 +30,12 @@ def _emit(payload: dict, machine: bool) -> None:
 
 def _add_json(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--json", action="store_true", dest="machine")
+
+
+def _add_stream_output(parser: argparse.ArgumentParser) -> None:
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--json", action="store_true", dest="machine")
+    group.add_argument("--jsonl", action="store_true", help="stream progress as JSON Lines")
 
 
 def _add_timing(parser: argparse.ArgumentParser) -> None:
@@ -94,7 +101,16 @@ def build_parser() -> argparse.ArgumentParser:
     series.add_argument("--jobs", type=int, default=1)
     series.add_argument("--resume")
     _add_timing(series)
-    _add_json(series)
+    _add_stream_output(series)
+
+    tournament = sub.add_parser("tournament", help="run an all-play-all round robin")
+    tournament.add_argument("--bots", nargs="+", required=True)
+    tournament.add_argument("--seeds", type=_parse_seeds, required=True)
+    tournament.add_argument("--swap-sides", action="store_true")
+    tournament.add_argument("--repetitions", type=int, default=1)
+    tournament.add_argument("--jobs", type=int, default=1)
+    _add_timing(tournament)
+    _add_stream_output(tournament)
 
     runs = sub.add_parser("runs", help="inspect runs")
     run_sub = runs.add_subparsers(dest="run_command", required=True)
@@ -133,7 +149,8 @@ def _arena_config(args, workspace: Path, official_root: Path, seeds: tuple[int, 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    machine = getattr(args, "machine", False)
+    jsonl = getattr(args, "jsonl", False)
+    machine = getattr(args, "machine", False) or jsonl
     storage = None
     try:
         workspace = Path(args.workspace).expanduser().resolve()
@@ -170,7 +187,35 @@ def main(argv: list[str] | None = None) -> int:
             except BotNotFound as exc:
                 raise CliError("bot_not_found", f"bot not found: {exc.args[0]}") from exc
             cfg = _arena_config(args, workspace, official_root, seeds, swap, reps, jobs)
-            _emit(run_series(cfg, registry, storage, bot_a, bot_b, run_id=resume), machine)
+            progress = None
+            if jsonl:
+                progress = lambda row: _emit({"event": "progress", **row}, True)
+            result = run_series(
+                cfg, registry, storage, bot_a, bot_b, run_id=resume, progress=progress
+            )
+            _emit({"event": "result", "result": result} if jsonl else result, machine)
+        elif args.command == "tournament":
+            for bot_id in args.bots:
+                try:
+                    registry.get(bot_id)
+                except BotNotFound as exc:
+                    raise CliError("bot_not_found", f"bot not found: {exc.args[0]}") from exc
+            cfg = _arena_config(
+                args,
+                workspace,
+                official_root,
+                args.seeds,
+                args.swap_sides,
+                args.repetitions,
+                args.jobs,
+            )
+            progress = None
+            if jsonl:
+                progress = lambda row: _emit({"event": "progress", **row}, True)
+            result = run_tournament(
+                cfg, registry, storage, tuple(args.bots), progress=progress
+            )
+            _emit({"event": "result", "result": result} if jsonl else result, machine)
         elif args.command == "runs":
             if args.run_command == "list":
                 payload = {"runs": storage.list_runs()}

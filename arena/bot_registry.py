@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import shlex
 import shutil
 from pathlib import Path
@@ -67,3 +68,11 @@ class BotRegistry:
         executable_ok = bool(tokens) and (Path(tokens[0]).is_file() or shutil.which(tokens[0]) is not None)
         return {"id": bot_id, "valid": directory_ok and executable_ok}
 
+
+def launch_command(record: dict[str, str]) -> str:
+    """Return a shell command that starts the bot in its registered directory."""
+    directory = record["working_dir"]
+    if os.name == "nt":
+        escaped = directory.replace('"', '""')
+        return f'cd /d "{escaped}" && {record["command"]}'
+    return f"cd -- {shlex.quote(directory)} && exec {record['command']}"

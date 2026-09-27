@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
-from .bot_registry import BotRegistry
+from .bot_registry import BotRegistry, launch_command
 from .models import ArenaConfig
 from .official_adapter import MatchOutcome, run_official_match
 from .stats import aggregate_results
@@ -47,13 +47,17 @@ def _config_payload(config: ArenaConfig) -> dict:
     return payload
 
 
-def _play(config: ArenaConfig, registry: BotRegistry, job: MatchJob) -> MatchOutcome:
-    y = registry.get(job.bot_y)
-    k = registry.get(job.bot_k)
+def _play(
+    config: ArenaConfig,
+    bots: dict[str, dict[str, str]],
+    job: MatchJob,
+) -> MatchOutcome:
+    y = bots[job.bot_y]
+    k = bots[job.bot_k]
     return run_official_match(
         config,
-        y["command"],
-        k["command"],
+        launch_command(y),
+        launch_command(k),
         job.seed,
         name_y=y["name"],
         name_k=k["name"],
@@ -70,8 +74,7 @@ def run_series(
     run_id: str | None = None,
     progress: Callable[[dict], None] | None = None,
 ) -> dict:
-    registry.get(bot_a)
-    registry.get(bot_b)
+    bots = {bot_a: registry.get(bot_a), bot_b: registry.get(bot_b)}
     if run_id is None:
         run_id = storage.create_run(
             _config_payload(config), bot_a, bot_b, config.official_comparable
@@ -115,10 +118,10 @@ def run_series(
     try:
         if config.plan.jobs == 1 or len(pending) < 2:
             for job in pending:
-                store(job, _play(config, registry, job))
+                store(job, _play(config, bots, job))
         else:
             with ThreadPoolExecutor(max_workers=config.plan.jobs) as pool:
-                futures = {pool.submit(_play, config, registry, job): job for job in pending}
+                futures = {pool.submit(_play, config, bots, job): job for job in pending}
                 for future in as_completed(futures):
                     store(futures[future], future.result())
         storage.update_run_status(run_id, "completed")
@@ -134,4 +137,3 @@ def run_series(
         "skipped": len(completed),
         "stats": aggregate_results(records, (bot_a, bot_b)),
     }
-
