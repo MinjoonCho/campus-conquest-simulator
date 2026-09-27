@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-27T00:00:00+09:00",
+  "title": "Design System: Campus Conquest Arena",
+  "extensions": {
+    "colorMeta": {
+      "operations-navy": {"role": "primary", "displayName": "Operations Navy", "canonical": "#173a59"},
+      "survey-paper": {"role": "neutral", "displayName": "Survey Paper", "canonical": "#eef3f6"},
+      "yonsei-blue": {"role": "secondary", "displayName": "Yonsei Blue", "canonical": "#1467b3"},
+      "korea-crimson": {"role": "secondary", "displayName": "Korea Crimson", "canonical": "#be3b4b"}
+    },
+    "typographyMeta": {
+      "display": {"displayName": "Operational Display", "purpose": "Application and region headings."},
+      "data": {"displayName": "Data Voice", "purpose": "IDs, turns, commands, and measurements."}
+    },
+    "shadows": [
+      {"name": "ambient-work-surface", "value": "0 12px 30px rgba(28,54,74,.08)", "purpose": "Separate bounded work surfaces from survey paper."}
+    ],
+    "motion": [
+      {"name": "settle", "value": "280ms cubic-bezier(.2,.8,.2,1)", "purpose": "Settle a newly selected work view into place."}
+    ],
+    "breakpoints": [
+      {"name": "stack-workspace", "value": "1040px"},
+      {"name": "compact-navigation", "value": "720px"}
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Action",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Starts or saves an explicit Arena operation.",
+      "html": "<button class=\"ds-primary-action\">시리즈 시작</button>",
+      "css": ".ds-primary-action{background:#173a59;color:#fff;border:0;border-radius:11px;padding:12px 20px;font-weight:700}.ds-primary-action:hover{background:#225278}.ds-primary-action:focus-visible{outline:3px solid rgba(20,103,179,.32);outline-offset:2px}"
+    },
+    {
+      "name": "Arena Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "A labeled match-configuration value.",
+      "html": "<input class=\"ds-input\" value=\"300\" aria-label=\"일반 턴 ms\">",
+      "css": ".ds-input{background:#fff;color:#172735;border:1px solid #c7d3da;border-radius:10px;padding:11px 12px;min-height:44px}.ds-input:focus-visible{outline:3px solid rgba(20,103,179,.32);outline-offset:2px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Cartographic Operations Table",
+    "overview": "A calm operational field where match conditions, territorial evidence, and reproducible run records share one visual grammar.",
+    "keyCharacteristics": ["Map-first", "Restrained neutrals", "Territorial team color", "Machine data voice"],
+    "rules": [
+      {"name": "The Territory Rule", "body": "Team colors encode team ownership, not decoration.", "section": "colors"},
+      {"name": "The Data Voice Rule", "body": "Monospace is reserved for exact machine data.", "section": "typography"}
+    ],
+    "dos": ["Keep status beside the action that changes it.", "Preserve task order across breakpoints."],
+    "donts": ["Do not card every metric or record.", "Do not use team colors decoratively."]
+  }
+}

@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Campus Conquest Arena</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <!--
+  THESIS: The match arena is a cartographic operations table, not a generic card dashboard.
+  OWN-WORLD: Cool survey-paper ground, navy instruments, campus blue and crimson territories, amber only for timing risk.
+  STORY: Register two bots, set the conditions, launch a reproducible run, then inspect the map and evidence.
+  FIRST VIEWPORT: Persistent rail at left, launch controls in the center, live run ledger and a 15x15 map field at right.
+  FORM: Grounded direction 4, cartographic operations table; seed key 788b889d.
+  FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+  -->
+  <div class="shell">
+    <aside class="rail">
+      <a class="brand" href="#top" aria-label="Campus Conquest Arena 홈">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i></span>
+        <span>Campus<br>Conquest</span>
+      </a>
+      <nav aria-label="주요 화면">
+        <button class="nav-item is-active" data-view="run">대전 구성</button>
+        <button class="nav-item" data-view="results">실행 기록</button>
+        <button class="nav-item" data-view="replay">리플레이</button>
+        <button class="nav-item" data-view="bots">봇 등록</button>
+      </nav>
+      <div class="rail-status">
+        <span class="status-dot" id="health-dot" aria-hidden="true"></span>
+        <span id="health-text">엔진 확인 중</span>
+      </div>
+    </aside>
+
+    <main id="top">
+      <header class="topbar">
+        <div>
+          <h1>Offline Arena</h1>
+          <p>공식 엔진 기반 봇 대전 관제실</p>
+        </div>
+        <button class="quiet-action" id="refresh-all" type="button">새로고침</button>
+      </header>
+
+      <section class="view is-visible" id="view-run" aria-labelledby="run-title">
+        <div class="run-layout">
+          <div class="launch-panel">
+            <div class="section-heading">
+              <h2 id="run-title">대전 조건을 놓고 출발시킵니다</h2>
+              <p>각 시드는 같은 지도를 사용하며, 진영 교대로 편향을 확인합니다.</p>
+            </div>
+            <form id="run-form">
+              <div class="versus-row">
+                <label>Bot A<select id="bot-a" required></select></label>
+                <span class="versus">VS</span>
+                <label>Bot B<select id="bot-b" required></select></label>
+              </div>
+              <div class="field-grid">
+                <label>시드 <input id="seeds" value="0,1,2,3" autocomplete="off"></label>
+                <label>반복 <input id="repetitions" type="number" value="1" min="1" max="100"></label>
+                <label>병렬 경기 <input id="jobs" type="number" value="1" min="1" max="32"></label>
+                <label>최대 턴 <input id="max-turns" type="number" value="160" min="1" max="160"></label>
+              </div>
+              <fieldset class="timing-fieldset">
+                <legend>시간 정책</legend>
+                <div class="segmented" role="radiogroup" aria-label="시간 정책">
+                  <label><input type="radio" name="timing" value="strict" checked><span>강제</span></label>
+                  <label><input type="radio" name="timing" value="observe"><span>측정만</span></label>
+                  <label><input type="radio" name="timing" value="off"><span>비활성</span></label>
+                </div>
+                <div class="field-grid timing-values">
+                  <label>첫 턴 ms<input id="first-turn-ms" type="number" value="3000" min="1"></label>
+                  <label>일반 턴 ms<input id="turn-ms" type="number" value="300" min="1"></label>
+                  <label>안전 종료 ms<input id="safety-ms" type="number" value="60000" min="1"></label>
+                  <label class="switch"><input id="swap-sides" type="checkbox" checked><span>진영 교대</span></label>
+                </div>
+              </fieldset>
+              <div class="form-actions">
+                <p id="run-message" role="status" aria-live="polite">등록된 봇을 선택하세요.</p>
+                <button class="primary-action" type="submit">시리즈 시작</button>
+              </div>
+            </form>
+          </div>
+
+          <aside class="map-field" aria-labelledby="map-title">
+            <div class="map-head">
+              <div><h2 id="map-title">관전 지도</h2><p id="map-caption">리플레이를 선택하면 전장이 열립니다.</p></div>
+              <div class="turn-controls">
+                <button type="button" id="prev-turn" aria-label="이전 턴">−</button>
+                <output id="turn-output">T 0</output>
+                <button type="button" id="next-turn" aria-label="다음 턴">＋</button>
+              </div>
+            </div>
+            <div class="map-wrap"><div class="game-map" id="game-map" role="img" aria-label="15 곱하기 15 경기 지도"></div></div>
+            <div class="map-legend" aria-label="지도 범례">
+              <span><i class="legend-y"></i>연세</span><span><i class="legend-k"></i>고려</span><span><i class="legend-neutral"></i>중립 건물</span>
+            </div>
+          </aside>
+        </div>
+
+        <div class="run-strip" aria-live="polite">
+          <div><span>최근 실행</span><strong id="latest-run">아직 없음</strong></div>
+          <div><span>상태</span><strong id="latest-status">대기</strong></div>
+          <div><span>경기</span><strong id="latest-games">0</strong></div>
+          <button type="button" id="open-latest">결과 열기</button>
+        </div>
+      </section>
+
+      <section class="view" id="view-results" aria-labelledby="results-title">
+        <div class="section-heading"><h2 id="results-title">실행 기록</h2><p>설정과 결과가 함께 남아 언제든 같은 조건으로 비교할 수 있습니다.</p></div>
+        <div class="table-wrap"><table><thead><tr><th>실행 ID</th><th>봇</th><th>상태</th><th>공식 비교</th><th></th></tr></thead><tbody id="runs-table"></tbody></table></div>
+        <div id="run-detail" class="detail-region" aria-live="polite"></div>
+      </section>
+
+      <section class="view" id="view-replay" aria-labelledby="replay-title">
+        <div class="section-heading"><h2 id="replay-title">리플레이 분석</h2><p>실행 기록에서 경기를 선택하면 명령·사건·상태를 턴별로 추적합니다.</p></div>
+        <div id="replay-empty" class="empty-state">선택된 리플레이가 없습니다.</div>
+        <div id="replay-data" class="replay-data" hidden>
+          <div class="replay-summary" id="replay-summary"></div>
+          <pre id="event-log" tabindex="0"></pre>
+        </div>
+      </section>
+
+      <section class="view" id="view-bots" aria-labelledby="bots-title">
+        <div class="section-heading"><h2 id="bots-title">봇 등록</h2><p>신뢰할 수 있는 로컬 명령만 등록하세요. Arena는 보안 샌드박스가 아닙니다.</p></div>
+        <form id="bot-form" class="bot-form">
+          <label>ID<input id="bot-id" required pattern="[A-Za-z0-9_-]+"></label>
+          <label>표시 이름<input id="bot-name" required></label>
+          <label class="wide">실행 명령<input id="bot-command" required placeholder="python3 /absolute/path/main.py"></label>
+          <label class="wide">작업 폴더<input id="bot-cwd" required></label>
+          <label>언어<input id="bot-language" value="python"></label>
+          <button class="primary-action" type="submit">봇 저장</button>
+        </form>
+        <p id="bot-message" role="status" aria-live="polite"></p>
+        <div class="bot-list" id="bot-list"></div>
+      </section>
+    </main>
+  </div>
+  <script src="/app.js" defer></script>
+</body>
+</html>
+

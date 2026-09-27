@@ -103,6 +103,10 @@ def build_parser() -> argparse.ArgumentParser:
     show = run_sub.add_parser("show")
     show.add_argument("--id", required=True)
     _add_json(show)
+
+    serve_parser = sub.add_parser("serve", help="start the local browser dashboard")
+    serve_parser.add_argument("--host", default="127.0.0.1")
+    serve_parser.add_argument("--port", type=int, default=8765)
     return parser
 
 
@@ -176,6 +180,12 @@ def main(argv: list[str] | None = None) -> int:
                     raise CliError("run_not_found", f"run not found: {args.id}")
                 payload = {"run": run, "matches": storage.list_matches(args.id)}
             _emit(payload, machine)
+        elif args.command == "serve":
+            storage.close()
+            storage = None
+            from .web import serve
+
+            serve(args.host, args.port, workspace, official_root)
         return 0
     except CliError as exc:
         _emit({"error": {"code": exc.code, "message": str(exc)}}, True)
